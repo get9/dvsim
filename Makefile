@@ -38,7 +38,7 @@ $(BUILD_DIR)/%.o : %.cpp
 	# the same name as the .o file.
 	$(CXX) $(CXX_FLAGS) -MMD -c $< -o $@
 
-debug: CXX_FLAGS += -g -DDEBUG
+debug:  CXX_FLAGS += -g -DDEBUG
 
 debug: $(BIN)
 
