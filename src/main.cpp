@@ -15,11 +15,13 @@ int main(int argc, char** argv)
 	}
 
 	// Parse config file (either from stdin or from file)
-	NodeConfig config = parse_config_file(instream);
-	if (argv[2] == "<") {
+	NodeConfig config;
+	if (strncmp(argv[2], "<", 1) == 0) {
+		std::cout << "getting config from stdin" << std::endl;
 		config = parse_config_file(std::cin);
 	} else {
 		std::ifstream infile(argv[2]);
+		std::cout << "getting config from " << argv[2] << std::endl;
 		config = parse_config_file(infile);
 	}
 

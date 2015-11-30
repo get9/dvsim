@@ -1,6 +1,6 @@
 #include "util.h"
 #include <stdexcept>
-
+#include <sstream>
 
 /*
  * XXX: assumes well-formed file that looks like the following:
@@ -11,11 +11,11 @@
  * ....
  * neighbor_n_name cost_of_the_link_to_this_neighbor neighbor_n_IP_address
  */
-NodeConfig parse_config_file(const std::ifstream& stream)
+NodeConfig parse_config_file(std::istream& stream)
 {
 	// Check if file is open, fail fast if not
-	if (!stream.is_open()) {
-		throw std::runtime_error("[error]: cannot open file: " + stream);
+	if (!stream.good()) {
+		throw std::runtime_error("[error]: cannot open file");
 	}
 
 	// Parse file
