@@ -19,6 +19,7 @@ Node::Node(const NodeConfig& config) : node_name_(config.node_name)
 	}
 }
 
+// Print neighbors table
 void Node::print_nbors_table() const
 {
 	std::cout << "Neighbor Table" << std::endl;
@@ -33,6 +34,7 @@ void Node::print_nbors_table() const
 	}
 }
 
+// Print distance vector table
 void Node::print_dv_table() const
 {
 	std::cout << "Distance Vector Table" << std::endl;
