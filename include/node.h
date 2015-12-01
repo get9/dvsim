@@ -3,8 +3,11 @@
 #ifndef _DVSIM_NODE_H_
 #define _DVSIM_NODE_H_
 
-#include <unordered_map>
+#include "types.h"
 #include "util.h"
+#include <unordered_map>
+#include <atomic>
+#include <mutex>
 
 namespace DVSim {
 
@@ -14,43 +17,45 @@ public:
 
 	Node(const NodeConfig& config);
 
-	NodeName node_name const { return node_name_; }
+	NodeName node_name() const { return node_name_; }
 
-	uint16_t port const { return port_; }
+	uint16_t port() const { return port_; }
 
 	// Pretty print of neighbors table
-	friend std::ostream& operator<<(std::ostream& s, const decltype(nbors_)& nbors)
-	{
-		s << "Neighbor Table" << std::endl;
-		for (const auto& entry : nbors) {
-			NodeName name;
-			std::string ip;
-			Distance d;
-			std::tie(name, ip, d) = entry;
-			s << name << "\t" << ip << "\t" << d << std::endl;
-		}
-		return s;
-	}
-
+	void print_nbors_table();
+	
 	// Pretty print of distance vector table
-	friend std::ostream& operator<<(std::ostream& s, const decltype(dv_)& dv)
-	{
-		s << "Distance Vector Table" << std::endl;
-		for (const auto& entry : dv) {
-			NodeName name;
-			Distance d;
-			NextHop next_hop;
-			std::tie(name, d, next_hop) = entry;
-			s << name << "\t" << d << "\t" << next_hop << std::endl;
-		}
-		return s;
-	}
+	void print_dv_table();
 
+	// Main entry point to algorithm. Does not return
+	void start();
+
+	// Periodically send update to neighbors
+	void periodic_send(int32_t interval_ms=kDefaultPeriodicSendDelayMs);
+
+	// Send update to all neighbors
+	void nbor_broadcast();
+
+	// Send message to IP address
+	void send_message(const std::string& ip_addr, const std::string& msg);
+
+	// Receive message
+	
+	
 private:
 	NodeName node_name_;
 	uint16_t port_;
+
+	// Boolean that tells whether threads should interrupt
+	//std::atomic<bool> should_interrupt_;
+
+	// Tables and their associated mutex
 	std::unordered_map<NodeName, DistAndNextHop> dv_;
 	std::unordered_map<NodeName, IPAndDist> nbors_;
+	std::mutex table_mutex_;
+
+	// Creates a message to send to neighbors
+	std::string create_message();
 };
 
 }

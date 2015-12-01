@@ -3,7 +3,9 @@
 #include <thread>
 #include <sstream>
 #include <mutex>
+#include <tuple>
 #include <cstring>
+#include <cerrno>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -20,8 +22,8 @@ Node::Node(const NodeConfig& config) :
 		std::tie(nbor_name, nbor_dist, nbor_ip) = nbor;
 		
 		// Add to neighbor and distance vector tables
-		nbors_.emplace(nbor_name, IPAndDist(nbor_ip, nbor_dist));
-		dv_.emplace(nbor_name, DistAndNextHop(nbor_dist, nbor_name));
+		nbors_.insert(std::make_pair(nbor_name, std::move(IPAndDist(nbor_ip, nbor_dist))));
+		dv_.insert(std::make_pair(nbor_name, std::move(DistAndNextHop(nbor_dist, nbor_name))));
 	}
 }
 
@@ -98,16 +100,14 @@ void Node::nbor_broadcast()
 // Send a msg to the specified ip_addr
 void Node::send_message(const std::string& ip_addr, const std::string& msg)
 {
-	// Get local machine info via getaddrinfo syscall
+    // Get local machine info via getaddrinfo syscall
     struct addrinfo hints;
     struct addrinfo *llinfo;
-	std::memset(&hints, 0, sizeof(hints)); 
-    hints = (struct addrinfo) {
-        .ai_family = AF_UNSPEC,
-        .ai_protocol = IPPROTO_TCP,
-        .ai_socktype = SOCK_STREAM
-    };
-	std::string port_str = std::to_string(port_);
+    std::memset(&hints, 0, sizeof(hints)); 
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_STREAM;
+    std::string port_str = std::to_string(port_);
     int status = getaddrinfo(ip_addr.c_str(), port_str.c_str(), &hints, &llinfo);
     if (status != 0) {
 		throw std::runtime_error("send(): getaddrinfo: failed");
@@ -127,6 +127,7 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 
 		// Now connect()
 		if (connect(sock, s->ai_addr, s->ai_addrlen) != 0) {
+			std::perror("connect");
 			std::cerr << "send(): connect: couldn't connect" << std::endl;
 			continue;
 		}
@@ -136,13 +137,14 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
     // Check that we didn't iterate through the entire getaddrinfo linked list
     // and clean up getaddrinfo alloc
     if (s == NULL) {
-		throw std::runtime_error("send(): couldn't bind to any addresses");
+	std::cerr << "send_message: couldn't bind to any addresses, retrying" << std::endl;
+	return;
     }
     freeaddrinfo(llinfo);
 
 	// Add msg len to the beginning of the msg
 	uint32_t msg_size = uint32_t(msg.size());
-	uint32_t buf_size = msg_size + sizeof(msg_size);
+	uint32_t buf_size = msg_size + uint32_t(sizeof(msg_size));
 	char* buf = new char[buf_size];
 	uint32_t net_order_msg_size = htonl(msg_size);
 	std::memcpy(buf, &net_order_msg_size, sizeof(net_order_msg_size));
@@ -162,7 +164,12 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 void Node::start()
 {
 	// Start the periodic send
+	print_nbors_table();
+	std::cout << std::endl;
+	print_dv_table();
+	std::cout << std::endl;
 	periodic_send();
+	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	do {
 		;
@@ -193,7 +200,8 @@ std::string Node::create_message()
 		NextHop nh;
 		std::tie(n, dnh) = dest;
 		std::tie(d, nh) = dnh;
-		ss << n << " " << d << "\r\n\r\n";
+		ss << n << " " << d << std::endl;
 	}
+	ss << "\r\n\r\n";
 	return ss.str();
 }

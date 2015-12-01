@@ -8,11 +8,11 @@
 
 namespace DVSim {
 
-using Distance  	 = int32_t;
-using NodeName       = std::string;
-using NextHop   	 = std::string;
-using IPAndDist      = std::pair<std::string, Distance>;
-using DistAndNextHop = std::pair<Distance, NextHop>;
+typedef int32_t                          Distance;
+typedef std::string                      NodeName;
+typedef std::string                      NextHop;
+typedef std::pair<std::string, Distance> IPAndDist;
+typedef std::pair<Distance, NextHop>     DistAndNextHop;
 
 }
 

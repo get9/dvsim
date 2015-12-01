@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = g++
 
 # Final binary
 BIN = mycode
@@ -6,7 +6,8 @@ BIN = mycode
 BUILD_DIR = ./build
 INCLUD_DIR = include
 
-CXX_FLAGS = -I$(INCLUD_DIR) -std=c++11 -Wfatal-errors -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wno-c99-extensions
+CXX_FLAGS = -I$(INCLUD_DIR) -std=gnu++0x -Wfatal-errors -Wall -Wextra -Wconversion -Wshadow -pthread
+LD_FLAGS = -pthread
 
 # List of all .cpp source files.
 CPPS = $(wildcard src/*.cpp)
@@ -22,7 +23,7 @@ $(BIN) : $(BUILD_DIR)/$(BIN)
 # Actual target of the binary - depends on all .o files.
 $(BUILD_DIR)/$(BIN) : $(OBJ)
 	mkdir -p $(@D)
-	$(CXX) $(CXX_FLAGS) $^ -o $@
+	$(CXX) $(CXX_FLAGS) $(LD_FLAGS) $^ -o $@
 
 # Include all .d files
 -include $(DEP)

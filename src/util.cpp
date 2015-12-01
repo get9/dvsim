@@ -14,7 +14,7 @@
 NodeConfig parse_config_file(std::istream& stream)
 {
 	// Check if file is open, fail fast if not
-	if (!stream.good()) {
+	if (!stream) {
 		throw std::runtime_error("[error]: cannot open file");
 	}
 

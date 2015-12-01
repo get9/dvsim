@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 		std::cout << "getting config from stdin" << std::endl;
 		config = parse_config_file(std::cin);
 	} else {
-		std::ifstream infile(argv[2]);
+		std::ifstream infile(argv[1], std::ifstream::in);
 		std::cout << "getting config from " << argv[1] << std::endl;
 		config = parse_config_file(infile);
 	}
