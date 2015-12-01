@@ -10,6 +10,8 @@
 
 #include "types.h"
 
+constexpr int32_t kDefaultPeriodicSendDelayMs = 10000;
+
 // Neighbor config of the form: (Name, Distance, IP Addr)
 using NeighborTriplet = std::tuple<DVSim::NodeName, DVSim::Distance, std::string>;
 
