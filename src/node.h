@@ -22,22 +22,25 @@ public:
 	uint16_t port() const { return port_; }
 
 	// Pretty print of neighbors table
-	void print_nbors_table() const;
+	void print_nbors_table();
 	
 	// Pretty print of distance vector table
-	void print_dv_table() const;
+	void print_dv_table();
 
 	// Main entry point to algorithm. Does not return
 	[[ noreturn ]] void start();
 
 	// Periodically send update to neighbors
-	void periodic_send(int32_t interval_ms);
+	void periodic_send(int32_t interval_ms=kDefaultPeriodicSendDelayMs);
 
 	// Send update to all neighbors
 	void nbor_broadcast();
 
 	// Send message to IP address
-	void send(const std::string& ip_addr, const std::string& msg) const;
+	void send_message(const std::string& ip_addr, const std::string& msg);
+
+	// Receive message
+	
 	
 private:
 	NodeName node_name_;

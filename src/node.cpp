@@ -1,6 +1,12 @@
 #include "node.h"
 #include <iostream>
 #include <thread>
+#include <sstream>
+#include <mutex>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 using namespace DVSim;
 
@@ -20,10 +26,10 @@ Node::Node(const NodeConfig& config) :
 }
 
 // Print neighbors table. Need to lock access to tables before printing.
-void Node::print_nbors_table() const
+void Node::print_nbors_table()
 {
 	std::cout << "Neighbor Table" << std::endl;
-	std::lock_guard<std::mutex> lg(table_mutex_);
+	std::unique_lock<std::mutex> lg(table_mutex_);
 	for (const auto& entry : nbors_) {
 		NodeName name;
 		std::string ip;
@@ -36,10 +42,10 @@ void Node::print_nbors_table() const
 }
 
 // Print distance vector table. Need to lock access to tables before printing.
-void Node::print_dv_table() const
+void Node::print_dv_table()
 {
 	std::cout << "Distance Vector Table" << std::endl;
-	std::lock_guard<std::mutex> lg(table_mutex_);
+	std::unique_lock<std::mutex> lg(table_mutex_);
 	for (const auto& entry : dv_) {
 		NodeName name;
 		DistAndNextHop dn;
@@ -82,26 +88,26 @@ void Node::nbor_broadcast()
 	for (const auto& pair : nbors) {
 		NodeName name;
 		std::string ip_addr;
-		std::tie(n, ip_addr) = pair;
-		std::cout << "Sending msg to " << name << ":" << std::endl;
+		std::tie(name, ip_addr) = pair;
+
 		std::cout << msg << std::endl;
-		send(ip_addr, msg);
+		send_message(ip_addr, msg);
 	}
 }
 
 // Send a msg to the specified ip_addr
-void send(const std::string& ip_addr, const std::string& msg) const
+void Node::send_message(const std::string& ip_addr, const std::string& msg)
 {
 	// Get local machine info via getaddrinfo syscall
     struct addrinfo hints;
     struct addrinfo *llinfo;
-    memset(&hints, 0, sizeof(hints)); 
+	std::memset(&hints, 0, sizeof(hints)); 
     hints = (struct addrinfo) {
         .ai_family = AF_UNSPEC,
         .ai_protocol = IPPROTO_TCP,
         .ai_socktype = SOCK_STREAM
     };
-	std::string port_str(port_);
+	std::string port_str = std::to_string(port_);
     int status = getaddrinfo(ip_addr.c_str(), port_str.c_str(), &hints, &llinfo);
     if (status != 0) {
 		throw std::runtime_error("send(): getaddrinfo: failed");
@@ -120,7 +126,7 @@ void send(const std::string& ip_addr, const std::string& msg) const
         }
 
 		// Now connect()
-		if (connect(sock, s->ai_family, s->ai_addrlen) != 0) {
+		if (connect(sock, s->ai_addr, s->ai_addrlen) != 0) {
 			std::cerr << "send(): connect: couldn't connect" << std::endl;
 			continue;
 		}
@@ -135,12 +141,12 @@ void send(const std::string& ip_addr, const std::string& msg) const
     freeaddrinfo(llinfo);
 
 	// Add msg len to the beginning of the msg
-	char* buf = new char[msg.size() + sizeof(int32_t)];
-	uint32_t msg_size = msg.size();
+	uint32_t msg_size = uint32_t(msg.size());
 	uint32_t buf_size = msg_size + sizeof(msg_size);
+	char* buf = new char[buf_size];
 	uint32_t net_order_msg_size = htonl(msg_size);
-	memcpy(buf, &net_order_msg_size, sizeof(net_order_msg_size));
-	strncpy(buf + sizeof(net_order_msg_size), msg.c_str(), msg_size);
+	std::memcpy(buf, &net_order_msg_size, sizeof(net_order_msg_size));
+	std::strncpy(buf + sizeof(net_order_msg_size), msg.c_str(), msg_size);
 
 	// Send (and make sure all data gets sent)
 	ssize_t send_len = send(sock, buf, buf_size, 0);
@@ -148,15 +154,18 @@ void send(const std::string& ip_addr, const std::string& msg) const
 		throw std::runtime_error("send(): send: couldn't send data");
 	}
 	while (send_len < buf_size) {
-		send_len += send(sock, buf + send_len, buf_size - send_len, 0);
+		send_len += send(sock, buf + send_len, buf_size - uint32_t(send_len), 0);
 	}
 }
 
 // Main entry point to start the algorithm
 void Node::start()
 {
+	// Start the periodic send
+	periodic_send();
+
 	do {
-		// ...
+		;
 	} while (true);
 }
 
@@ -182,9 +191,9 @@ std::string Node::create_message()
 		DistAndNextHop dnh;
 		Distance d;
 		NextHop nh;
-		std::tie(n, dnh) = dv_;
+		std::tie(n, dnh) = dest;
 		std::tie(d, nh) = dnh;
-		ss << n << " " << d << std::endl;
+		ss << n << " " << d << "\r\n\r\n";
 	}
 	return ss.str();
 }
