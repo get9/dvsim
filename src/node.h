@@ -6,6 +6,8 @@
 #include "types.h"
 #include "util.h"
 #include <unordered_map>
+#include <atomic>
+#include <mutex>
 
 namespace DVSim {
 
@@ -25,13 +27,32 @@ public:
 	// Pretty print of distance vector table
 	void print_dv_table() const;
 
-	void start();
+	// Main entry point to algorithm. Does not return
+	[[ noreturn ]] void start();
+
+	// Periodically send update to neighbors
+	void periodic_send(int32_t interval_ms);
+
+	// Send update to all neighbors
+	void nbor_broadcast();
+
+	// Send message to IP address
+	void send(const std::string& ip_addr, const std::string& msg) const;
 	
 private:
 	NodeName node_name_;
 	uint16_t port_;
+
+	// Boolean that tells whether threads should interrupt
+	//std::atomic<bool> should_interrupt_;
+
+	// Tables and their associated mutex
 	std::unordered_map<NodeName, DistAndNextHop> dv_;
 	std::unordered_map<NodeName, IPAndDist> nbors_;
+	std::mutex table_mutex_;
+
+	// Creates a message to send to neighbors
+	std::string create_message();
 };
 
 }
