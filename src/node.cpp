@@ -48,7 +48,6 @@ void Node::print_nbors_table()
 // Print distance vector table. Need to lock access to tables before printing.
 void Node::print_dv_table()
 {
-	std::cout << "Distance Vector Table" << std::endl;
 	std::unique_lock<std::mutex> lg(table_mutex_);
 	for (const auto& entry : dv_) {
 		NodeName name;
@@ -109,6 +108,10 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 	std::string port_str = std::to_string(port_);
+	
+	// Debug
+	std::cout << "(" << ip_addr << ", " << port_str << ")" << std::endl;
+
     struct addrinfo *server_info;
     int err = getaddrinfo(ip_addr.c_str(), port_str.c_str(), &hints, &server_info);
     if (err != 0) {
