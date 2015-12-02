@@ -101,6 +101,10 @@ void Node::nbor_broadcast()
 // Send a msg to the specified ip_addr
 void Node::send_message(const std::string& ip_addr, const std::string& msg)
 {
+	std::cout << "====================================" << std::endl;
+	std::cout << "[send_message]: msg is" << std::endl;
+	std::cout << msg << std::endl;
+	std::cout << "====================================" << std::endl;
 	// Networking code to set up address/socket
     struct addrinfo hints;
 	std::memset(&hints, 0, sizeof(hints));
