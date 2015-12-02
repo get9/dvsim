@@ -198,7 +198,7 @@ void Node::start()
 			std::cout << "received message from " << msg.sender << std::endl;
 			std::cout << serialized_msg << std::endl;
 			if (this->update_dv_table(msg)) {
-				std::cout << "Current DV table" << std::endl;
+				std::cout << "Updated DV table" << std::endl;
 				print_dv_table();
 				std::cout << std::endl;
 				this->nbor_broadcast();
