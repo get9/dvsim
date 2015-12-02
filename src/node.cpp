@@ -302,7 +302,7 @@ std::string Node::receive_message(int32_t conn)
 
 	// Receive the next msg_size bytes that contain the message
 	// XXX Need + 1 for null terminator?
-	auto buf = std::unique_ptr<char>(new char[bytes_recvd]);
+	auto buf = std::unique_ptr<char>(new char[msg_size]);
 	bytes_recvd = 0;
 	while (bytes_recvd < msg_size) {
 		int32_t bytecount = (int32_t) recv(
