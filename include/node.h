@@ -39,8 +39,14 @@ public:
 	// Send message to IP address
 	void send_message(const std::string& ip_addr, const std::string& msg);
 
-	// Receive message
-	
+	// Receive incoming connection
+	int32_t receive_connection();
+
+	// Receive the message from connection
+	std::string receive_message(int32_t conn);
+
+	// Update the tables accordingly
+	bool update_dv_table(const DVMessage& msg);
 	
 private:
 	NodeName node_name_;
