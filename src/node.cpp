@@ -108,10 +108,6 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 	std::string port_str = std::to_string(port_);
-	
-	// Debug
-	std::cout << "(" << ip_addr << ", " << port_str << ")" << std::endl;
-
     struct addrinfo *server_info;
     int err = getaddrinfo(ip_addr.c_str(), port_str.c_str(), &hints, &server_info);
     if (err != 0) {
@@ -135,7 +131,7 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 		// Connect to it
 		if (connect(sock, p->ai_addr, p->ai_addrlen) == -1) {
 			close(sock);
-			perror("[send_message]: connect");
+			std::cerr << "[send_message]: connect (" << ip_addr << ")" << std::endl;
 			continue;
 		}
         break;
@@ -182,6 +178,9 @@ void Node::start()
 	std::cout << "Initial routing table" << std::endl;
 	print_dv_table();
 	std::cout << std::endl;
+
+	// Wait for all nodes to start listening before sending messages
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	periodic_send();
 
 	while (true) {
