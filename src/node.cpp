@@ -386,7 +386,7 @@ std::string Node::create_message()
 		NextHop nh;
 		std::tie(n, dnh) = dest;
 		std::tie(d, nh) = dnh;
-		ss << n << " " << d << std::endl;
+		ss << n << " " << d << " " << nh << std::endl;
 	}
 	return ss.str();
 }
