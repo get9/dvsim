@@ -1,0 +1,169 @@
+#!/bin/bash
+
+set -e
+set -u
+
+usage () {
+    echo "Usage:"
+    echo "    $0 [build | clean | clone | copy | kill | pull | run]"
+    echo "        copy:"
+    echo "            all - copies all files of the form <node>_config.txt to respective nodes"
+    echo "            [file] [node] - copies \$file to \$ node"
+}
+
+# Map of node names to ports
+declare -A newmap
+newmap[a]=34362
+newmap[b]=34363
+newmap[c]=34364
+newmap[d]=34365
+newmap[e]=34366
+newmap[f]=34367
+
+# All nodes
+all_nodes="a b c d e f"
+
+cmd=""
+
+# Only for copying
+copy_to_node=""
+file_to_copy=""
+copy_all=false
+
+# Only for running
+nodes_to_run=()
+
+remote=geni
+giturl="https://github.com/get9/dvsim.git"
+project_dir=dvsim
+
+if [[ $# == 0 ]]; then
+    usage
+    exit
+fi
+
+# Parse command line args
+while [[ $# > 0 ]]; do
+    key="$1"
+    case $key in
+        clean|clone|build|kill|logcat|pull|run)
+            cmd="$key"
+            shift
+            while [[ $# > 0 ]]; do
+                nodes_to_run+=("$1") 
+                shift
+            done
+            ;;
+        copy)
+            echo "$@"
+            if [[ $# != 2 && $# != 3 ]]; then
+                echo "Usage:"
+                echo "    $0 copy [all|<file> <nodename>]"
+                exit
+            fi
+            cmd="copy"
+            shift
+            if [[ "$1" == "all" ]]; then
+                copy_all=true
+                shift
+            else
+                file_to_copy="$1"    
+                shift
+                copy_to_node="$1"
+                shift
+            fi
+            ;;
+        *)
+            usage
+            exit
+            ;;
+    esac
+done
+
+# If no nodes were passed for some commands, then default to all of them
+if [[ ${#nodes_to_run[@]} == 0 ]]; then
+    nodes_to_run=${all_nodes}
+fi
+
+# Do things
+case $cmd in
+    # Get source from $githuburl
+    clone)
+        echo "cloning on each node"
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            ssh $remote -p ${newmap[${node}]} "git clone ${giturl}"
+        done
+        ;;
+
+    clean)
+        echo "cleaning on each node"
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            ssh $remote -p ${newmap[${node}]} "cd ${project_dir}; make clean"
+        done
+        ;;
+
+    pull)
+        echo "updating each node"
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            ssh $remote -p ${newmap[${node}]} "cd ${project_dir}; git pull"
+        done
+        ;;
+
+    kill)
+        echo "killing each node"
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            ssh $remote -p ${newmap[${node}]} "kill \$(pgrep mycode)" &
+        done
+        ;;
+
+    # Build via make on all nodes
+    build)
+        echo "building on each node"
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            ssh $remote -p ${newmap[${node}]} "cd ${project_dir}; make debug"
+        done
+        ;;
+
+    # Concatenate logs from each node to file on localhost
+    logcat)
+        echo "copying and concatenating logs from nodes to current host"
+        all_logs=$(pwd)/full_log.txt
+        for node in ${nodes_to_run}; do
+            echo "${node}"
+            n=${newmap[${node}]}
+            rsync -e "ssh -p ${n}" $remote:~/${project_dir}/log.txt ${node}_log.txt
+            cat ${node}_log.txt >> ${all_logs}
+        done
+        ;;
+
+    # Copy either all config files of the form ${node}_config.txt or copy specific file to given node
+    copy)
+        if [[ ${copy_all} == true ]]; then
+            for node in ${nodes_to_run}; do
+                echo "${node}_config.txt --> $node"
+                rsync -e "ssh -p ${newmap[${node}]}" "${node}_config.txt" $remote:~
+            done
+        else
+            n=${newmap[${copy_to_node}]}
+            rsync -e "ssh -p ${n}" ${file_to_copy} $remote:~/${copy_to_node}_config.txt
+        fi
+        ;;
+
+    # Run on given nodes with existing config on server
+    run)
+        for n in ${nodes_to_run[@]}; do
+            ssh $remote -p ${newmap[${n}]} "ulimit -c unlimited; cd ${project_dir}; build/mycode ~/${n}_config.txt > log.txt 2>&1" &
+        done
+        ;;
+
+    # Not a good command
+    *)
+        echo "Unrecognized command: ${cmd}"
+        exit
+        ;;
+esac
