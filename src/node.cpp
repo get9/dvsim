@@ -287,13 +287,13 @@ std::string Node::receive_message(int32_t conn)
 	uint32_t msg_size;
 	uint32_t bytes_recvd = 0;
 	while (bytes_recvd < sizeof(msg_size)) {
-		ssize_t bytecount = recv(conn, (uint32_t *)&msg_size + bytes_recvd,
-				                 sizeof(msg_size), 0);
+		int32_t bytecount = (int32_t) recv(
+				conn, (uint32_t *)&msg_size + bytes_recvd, sizeof(msg_size), 0);
 		if (bytecount == -1) {
 			perror("[receive_message]: recv");
 			continue;
 		}
-		bytes_recvd += bytecount;
+		bytes_recvd += uint32_t(bytecount);
 	}
 	msg_size = ntohl(msg_size);
 
@@ -302,12 +302,13 @@ std::string Node::receive_message(int32_t conn)
 	auto buf = std::unique_ptr<char>(new char[bytes_recvd]);
 	bytes_recvd = 0;
 	while (bytes_recvd < msg_size) {
-		ssize_t bytecount = recv(conn, buf.get() + bytes_recvd, msg_size, 0);
+		int32_t bytecount = (int32_t) recv(
+				conn, buf.get() + bytes_recvd, msg_size, 0);
 		if (bytecount == -1) {
 			perror("[receive_message]: recv");
 			continue;
 		}
-		bytes_recvd += bytecount;
+		bytes_recvd += uint32_t(bytecount);
 	}
 
 	// Returns copy of buf
