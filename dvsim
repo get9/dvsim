@@ -138,7 +138,8 @@ case $cmd in
             n=${newmap[${node}]}
             rsync -e "ssh -p ${n}" $remote:~/${project_dir}/log.txt ${node}_log.txt
 			printf '=%.s' {1..100} >> ${all_logs}
-			echo "${node} LOG"
+			echo "" >> ${all_logs}
+			echo "${node} LOG" >> ${all_logs}
             cat ${node}_log.txt >> ${all_logs}
 			echo "" >> ${all_logs}
         done
