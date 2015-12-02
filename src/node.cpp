@@ -6,6 +6,7 @@
 #include <tuple>
 #include <cstring>
 #include <cerrno>
+#include <cstdio>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -93,8 +94,6 @@ void Node::nbor_broadcast()
 		NodeName name;
 		std::string ip_addr;
 		std::tie(name, ip_addr) = pair;
-
-		std::cout << msg << std::endl;
 		send_message(ip_addr, msg);
 	}
 }
@@ -151,6 +150,7 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 	uint32_t net_order_msg_size = htonl(msg_size);
 	std::memcpy(buf.get(), &net_order_msg_size, sizeof(net_order_msg_size));
 	std::strncpy(buf.get() + sizeof(net_order_msg_size), msg.c_str(), msg_size);
+	printf("buf = %s\n", buf.get());
 
 	// Send (and make sure all data gets sent)
 	ssize_t send_len = send(sock, buf.get(), buf_size, 0);
@@ -326,8 +326,13 @@ bool Node::update_dv_table(const DVMessage& msg)
 		NextHop node_nh;
 		std::tie(node, sender_to_node_dist, node_nh) = triplet;
 
+		// Can skip if this is our node
+		if (node == node_name_) {
+			continue;
+		}
+
 		// Distance to sender (neighbor)
-		if (dv_.find(msg.sender) == std::end(dv_)) {
+		else if (dv_.find(msg.sender) == std::end(dv_)) {
 			std::cerr << "[update_tables]: sender " << msg.sender
 				      << " not in dv table" << std::endl;
 			continue;
