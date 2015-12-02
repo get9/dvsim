@@ -1,6 +1,7 @@
 #include "util.h"
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 /*
  * XXX: assumes well-formed file that looks like the following:
@@ -73,6 +74,7 @@ DVMessage deserialize(const std::string& msg)
 	for (int32_t i = 0; i < dst_count; ++i) {
 		std::getline(ss, line);
 		auto elems = split(line, ' ');
+		assert(elems.size() == 3 && "elems.size() was not 3");
 		ents.emplace_back(elems[0], std::stoi(elems[1]), elems[2]);
 	}
 	
