@@ -1,5 +1,6 @@
 #include "util.h"
 #include <stdexcept>
+#include <iostream>
 #include <sstream>
 #include <cassert>
 
@@ -58,6 +59,7 @@ std::vector<std::string> split(const std::string& s, char delim)
 // Deserialize a message from the wire
 DVMessage deserialize(const std::string& msg)
 {
+	std::cout << msg << std::endl;
 	std::stringstream ss(msg);
 	std::string line;
 
