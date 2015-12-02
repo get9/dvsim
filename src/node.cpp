@@ -150,7 +150,6 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 	uint32_t net_order_msg_size = htonl(msg_size);
 	std::memcpy(buf.get(), &net_order_msg_size, sizeof(net_order_msg_size));
 	std::strncpy(buf.get() + sizeof(net_order_msg_size), msg.c_str(), msg_size);
-	printf("buf = %s\n", buf.get());
 
 	// Send (and make sure all data gets sent)
 	ssize_t send_len = send(sock, buf.get(), buf_size, 0);
@@ -199,6 +198,9 @@ void Node::start()
 			std::cout << "received message from " << msg.sender << std::endl;
 			std::cout << serialized_msg << std::endl;
 			if (this->update_dv_table(msg)) {
+				std::cout << "Current DV table" << std::endl;
+				print_dv_table();
+				std::cout << std::endl;
 				this->nbor_broadcast();
 			}
 		}).detach();
