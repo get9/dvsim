@@ -171,16 +171,22 @@ void Node::send_message(const std::string& ip_addr, const std::string& msg)
 // Main entry point to start the algorithm
 void Node::start()
 {
+	// Setup listener
+	int32_t listener_sock = set_listen_for_connections();
+	if (listener_sock == -1) {
+		std::cerr << "[start]: could not listen for connections" << std::endl;
+		std::exit(1);
+	}
+
 	// Start the periodic send
 	std::cout << "Initial routing table" << std::endl;
 	print_dv_table();
 	std::cout << std::endl;
 	periodic_send();
-	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	while (true) {
 		// receive_connection() is blocking!
-		int newsock = receive_connection();
+		int32_t newsock = receive_connection(listener_sock);
 		if (newsock == -1) {
 			std::cerr << "[start]: couldn't receive connection" << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -200,7 +206,7 @@ void Node::start()
 	}
 }
 
-int32_t Node::receive_connection()
+int32_t Node::set_listen_for_connections()
 {
 	// Starting to connect to socket for receiving
 	struct addrinfo hints;
@@ -256,7 +262,12 @@ int32_t Node::receive_connection()
 		perror("[receive_connection]: listen");
 		return -1;
 	}
+	
+	return sock;
+}
 
+int32_t Node::receive_connection(int32_t sock)
+{
 	// Accept connection on that socket
 	struct sockaddr_storage their_addr;
 	socklen_t sin_size;

@@ -40,10 +40,13 @@ public:
 	void send_message(const std::string& ip_addr, const std::string& msg);
 
 	// Receive incoming connection
-	int32_t receive_connection();
+	int32_t receive_connection(int32_t conn);
 
 	// Receive the message from connection
 	std::string receive_message(int32_t conn);
+
+	// Setup listener for connections
+	int32_t set_listen_for_connections();
 
 	// Update the tables accordingly
 	bool update_dv_table(const DVMessage& msg);
