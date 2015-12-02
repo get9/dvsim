@@ -53,3 +53,31 @@ std::vector<std::string> split(const std::string& s, char delim)
 	}
 	return items;
 }
+
+// Deserialize a message from the wire
+DVMessage deserialize(const std::string& msg)
+{
+	std::stringstream ss(msg);
+	std::string line;
+
+	// Name
+	DVSim::NodeName name;
+	std::getline(ss, name);
+
+	// Count
+	std::getline(ss, line);
+	int32_t dst_count = std::stoi(line);
+
+	// Entries
+	std::vector<MsgTriplet> ents;
+	for (int32_t i = 0; i < dst_count; ++i) {
+		std::getline(ss, line);
+		auto elems = split(line, ' ');
+		ents.emplace_back(elems[0], std::stoi(elems[1]), elems[2]);
+	}
+	
+	DVMessage dv;
+	dv.sender = name;
+	dv.entries = ents;
+	return dv;
+}
