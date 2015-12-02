@@ -325,7 +325,7 @@ bool Node::update_dv_table(const DVMessage& msg)
 			// Distance will be dist to sender + distance provided by sender
 			DistAndNextHop dnh =
 				DistAndNextHop(dist_to_sender + sender_to_node_dist, msg.sender);
-			dv_.emplace(node, std::move(dnh));
+			dv_.insert(std::make_pair(node, std::move(dnh)));
 			did_update_table = true;
 		}
 
