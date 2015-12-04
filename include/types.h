@@ -6,14 +6,14 @@
 #include <tuple>
 #include <string>
 
-namespace DVSim {
+namespace DVSim
+{
 
-typedef int32_t                          Distance;
-typedef std::string                      NodeName;
-typedef std::string                      NextHop;
+typedef int32_t Distance;
+typedef std::string NodeName;
+typedef std::string NextHop;
 typedef std::pair<std::string, Distance> IPAndDist;
-typedef std::pair<Distance, NextHop>     DistAndNextHop;
-
+typedef std::pair<Distance, NextHop> DistAndNextHop;
 }
 
 #endif
